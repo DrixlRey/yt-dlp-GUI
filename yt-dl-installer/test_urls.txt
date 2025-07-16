@@ -1,0 +1,18 @@
+Testing URLs that our installer should generate:
+
+Expected format: https://www.python.org/ftp/python/VERSION/python-VERSION-amd64.exe
+
+For Python 3.13.5:
+URL: https://www.python.org/ftp/python/3.13.5/python-3.13.5-amd64.exe
+Status: ✅ Confirmed working (28.8 MB file exists)
+
+For Python 3.13.1 (fallback):
+URL: https://www.python.org/ftp/python/3.13.1/python-3.13.1-amd64.exe  
+Status: Should work (standard format)
+
+Issue: The installer is failing to download, but the URLs are correct.
+Possible causes:
+1. PowerShell version detection failing
+2. String parsing issues in NSIS
+3. NSISdl download timeout
+4. Firewall/proxy issues

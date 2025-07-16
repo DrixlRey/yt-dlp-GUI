@@ -1,0 +1,93 @@
+{
+    "app": {
+        "name": "YouTube Downloader GUI",
+        "version": "1.0.0",
+        "window_size": [
+            800,
+            700
+        ],
+        "theme": "system"
+    },
+    "gui_settings": {
+        "theme": "system",
+        "window_size": [
+            800,
+            700
+        ],
+        "show_statusbar": true
+    },
+    "downloads": {
+        "default_path": "C:/Users/jackie.cheng/LocalDownload",
+        "audio_format": "mp3",
+        "video_format": "mp4",
+        "quality_options": [
+            "best",
+            "1080p",
+            "720p",
+            "480p"
+        ],
+        "filename_template": "%(title)s.%(ext)s",
+        "default_quality": "best"
+    },
+    "download_settings": {
+        "default_path": "C:\\Users\\jackie.cheng\\Downloads",
+        "audio_format": "mp3",
+        "video_format": "mp4",
+        "quality_options": [
+            "best",
+            "1080p",
+            "720p",
+            "480p"
+        ],
+        "filename_template": "%(title)s.%(ext)s"
+    },
+    "embedded_binaries": {
+        "python_runtime": {
+            "version": "3.13.1",
+            "download_url": "https://www.python.org/ftp/python/3.13.1/python-3.13.1-embed-amd64.zip",
+            "local_path": "./python_runtime",
+            "executable": "./python_runtime/python.exe"
+        },
+        "yt_dlp": {
+            "version": "latest",
+            "download_url": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe",
+            "local_path": "./binaries/yt-dlp.exe",
+            "executable": "./binaries/yt-dlp.exe"
+        },
+        "ffmpeg": {
+            "version": "latest",
+            "download_url": "https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip",
+            "local_path": "./binaries/ffmpeg",
+            "executable": "./binaries/ffmpeg/bin/ffmpeg.exe",
+            "additional_files": [
+                "./binaries/ffmpeg/bin/ffprobe.exe"
+            ]
+        },
+        "pyqt6": {
+            "wheel_packages": [
+                "PyQt6>=6.6.0",
+                "PyQt6-Qt6>=6.6.0",
+                "sip>=6.7.0"
+            ],
+            "local_path": "./python_runtime/Lib/site-packages"
+        },
+        "yt_dlp_python": {
+            "wheel_packages": [
+                "yt-dlp>=2024.1.0",
+                "requests>=2.31.0",
+                "urllib3>=2.0.0",
+                "certifi>=2023.0.0",
+                "charset-normalizer>=3.0.0",
+                "idna>=3.0",
+                "Pillow>=10.0.0"
+            ],
+            "local_path": "./python_runtime/Lib/site-packages"
+        }
+    },
+    "logging": {
+        "enabled": true,
+        "level": "INFO",
+        "format": "%(asctime)s - %(levelname)s - %(message)s",
+        "file": "./logs/yt_downloader.log"
+    }
+}
