@@ -7,7 +7,23 @@ $groupNames = @(
 "App-CDCR-O365Licensing-Project",
 "App-CDCR-O365Licensing-Visio",
 "App-CDCR-SCCM-ChromeDevelopers",
+"App-CDCR-SCCM-Firefox",
 "App-CDCR-SCCM-M365-Access",
+"Share-CDCR-EIS-SAN2-RDCALC-M"
+)
+
+# Define computer-only groups
+$computerOnlyGroups = @(
+"App-CDCR-SCCM-ChromeDevelopers",
+"App-CDCR-SCCM-Firefox",
+"App-CDCR-SCCM-M365-Access"
+)
+
+# Define user-only groups
+$userOnlyGroups = @(
+"AD-CDCR-Units-PCsRestrictedGroups-Filter",
+"App-CDCR-O365Licensing-Project",
+"App-CDCR-O365Licensing-Visio",
 "Share-CDCR-EIS-SAN2-RDCALC-M"
 )
 
@@ -115,6 +131,7 @@ $groupComboBox.Add_SelectedIndexChanged({
     $selectedGroup = $groupComboBox.SelectedItem
     switch ($selectedGroup) {
         "App-CDCR-SCCM-ChromeDevelopers" {$containerLabel.Text = "(Computer container)"}
+        "App-CDCR-SCCM-Firefox" {$containerLabel.Text = "(Computer container)"}
         "AD-CDCR-Units-PCsRestrictedGroups-Filter" { $containerLabel.Text = "(User container)" }
         "App-CDCR-O365Licensing-Project"           { $containerLabel.Text = "(User container)" }
         "App-CDCR-O365Licensing-Visio"               { $containerLabel.Text = "(User container)" }
@@ -154,12 +171,37 @@ $processButton.Add_Click({
         foreach ($row in $csvData) {
             $accountName = $row.samaccountname
             try {
-                # Try to get the user object
-                $objectDN = (Get-ADUser -Filter "SamAccountName -eq '$accountName'" -Properties DistinguishedName).DistinguishedName
-                if (-not $objectDN) {
-                    # If still not found, try with a trailing '$' for computer accounts
-                    $objectDN = (Get-ADComputer -Filter "SamAccountName -eq '$accountName$'" -Properties DistinguishedName).DistinguishedName
+                # Check group type and validate object type
+                $isComputerOnlyGroup = $computerOnlyGroups -contains $groupName
+                $isUserOnlyGroup = $userOnlyGroups -contains $groupName
+                $userObject = $null
+                $computerObject = $null
+                
+                # Try to get the user object first
+                $userObject = Get-ADUser -Filter "SamAccountName -eq '$accountName'" -Properties DistinguishedName -ErrorAction SilentlyContinue
+                # Try to get the computer object
+                $computerObject = Get-ADComputer -Filter "SamAccountName -eq '$accountName$'" -Properties DistinguishedName -ErrorAction SilentlyContinue
+                
+                # Validate against computer-only groups
+                if ($isComputerOnlyGroup -and $userObject -and -not $computerObject) {
+                    $output += "Error: Cannot add user '$accountName' to computer-only group '$groupName'.`n"
+                    continue
                 }
+                
+                # Validate against user-only groups
+                if ($isUserOnlyGroup -and $computerObject -and -not $userObject) {
+                    $output += "Error: Cannot add computer '$accountName' to user-only group '$groupName'.`n"
+                    continue
+                }
+                
+                # Determine which object to use
+                $objectDN = $null
+                if ($computerObject) {
+                    $objectDN = $computerObject.DistinguishedName
+                } elseif ($userObject -and -not $isComputerOnlyGroup) {
+                    $objectDN = $userObject.DistinguishedName
+                }
+                
                 if ($objectDN) {
                     Add-ADGroupMember -Identity $groupName -Members $objectDN
                     if ($output -ne "") {
@@ -206,17 +248,38 @@ $output += "Successfully added $accountName to $groupName.`r`n"
         $accountName = $manualTextBox.Text.Trim()
         $groupName = $groupComboBox.SelectedItem
         try {
-            # Try to get the user object
-            $objectDN = (Get-ADUser -Filter "SamAccountName -eq '$accountName'" -Properties DistinguishedName).DistinguishedName
-            if (-not $objectDN) {
-                # If still not found, try with a trailing '$' for computer accounts
-                $objectDN = (Get-ADComputer -Filter "SamAccountName -eq '$accountName$'" -Properties DistinguishedName).DistinguishedName
-            }
-            if ($objectDN) {
-                Add-ADGroupMember -Identity $groupName -Members $objectDN
-                $output += "Successfully added $accountName to $groupName.`n"
+            # Check group type and validate object type
+            $isComputerOnlyGroup = $computerOnlyGroups -contains $groupName
+            $isUserOnlyGroup = $userOnlyGroups -contains $groupName
+            $userObject = $null
+            $computerObject = $null
+            
+            # Try to get the user object first
+            $userObject = Get-ADUser -Filter "SamAccountName -eq '$accountName'" -Properties DistinguishedName -ErrorAction SilentlyContinue
+            # Try to get the computer object
+            $computerObject = Get-ADComputer -Filter "SamAccountName -eq '$accountName$'" -Properties DistinguishedName -ErrorAction SilentlyContinue
+            
+            # Validate against computer-only groups
+            if ($isComputerOnlyGroup -and $userObject -and -not $computerObject) {
+                $output += "Error: Cannot add user '$accountName' to computer-only group '$groupName'.`n"
+            # Validate against user-only groups
+            } elseif ($isUserOnlyGroup -and $computerObject -and -not $userObject) {
+                $output += "Error: Cannot add computer '$accountName' to user-only group '$groupName'.`n"
             } else {
-                $output += "Account $accountName not found as user or computer.`n"
+                # Determine which object to use
+                $objectDN = $null
+                if ($computerObject) {
+                    $objectDN = $computerObject.DistinguishedName
+                } elseif ($userObject -and -not $isComputerOnlyGroup) {
+                    $objectDN = $userObject.DistinguishedName
+                }
+                
+                if ($objectDN) {
+                    Add-ADGroupMember -Identity $groupName -Members $objectDN
+                    $output += "Successfully added $accountName to $groupName.`n"
+                } else {
+                    $output += "Account $accountName not found as user or computer.`n"
+                }
             }
             # isMember check for manual input
             $groupMembers = Get-ADGroupMember -Identity $groupName -ErrorAction SilentlyContinue
